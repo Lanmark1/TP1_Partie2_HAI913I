@@ -4,6 +4,7 @@ import visitors.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -20,6 +21,7 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
@@ -36,13 +38,23 @@ public class Parser {
 	public static void main(String[] args) throws IOException {
 
 		// read java files
-		projectPath =  System.getProperty("user.dir") + "/../org.anonbnr.design_patterns-main/";
+		projectPath =  System.getProperty("user.dir") + "/projectsToParse/org.anonbnr.design_patterns-main";
+//		String[] spl = System.getProperty("user.dir").split("");
+//		String[] newArray = Arrays.copyOf(spl, spl.length-1);
+//		StringBuilder stringBuilder = new StringBuilder();
+//		for (String str : newArray) {
+//		    stringBuilder.append(str);
+//		}
+//		System.out.println(stringBuilder.toString());
+//		System.out.println(Arrays.toString(spl));
 		projectSourcePath = projectPath + "/src";
 		System.out.println(projectPath);
+		System.out.println(System.getProperty("os.name"));
 		final File folder = new File(projectSourcePath);
 		ArrayList<File> javaFiles = listJavaFilesForFolder(folder);
 //		int nbMethods = 0;
 		int nbLines = 0;
+		int allLinesInMethods = 0;
 		List<PackageDeclaration> packages = new ArrayList<>();
 		List<Integer> nbMethods = new ArrayList<>();
 		//
@@ -59,7 +71,8 @@ public class Parser {
 			nbLines += content.split("\n").length;
 			// add number of methods
 			nbMethods.add(getNbMethodsInFile(parse));
-//
+			// add sum of lines for all the methods in the class
+			allLinesInMethods += getNbOfLinesForAllMethods(parse);
 //			// print variables info
 //			printVariableInfo(parse);
 
@@ -78,12 +91,15 @@ public class Parser {
 			}
 		}
 		
-		int sum = 0;
+		int nbMethodsSum = 0;
 		for (int i = 0; i < nbMethods.size(); i++) {
-			sum += nbMethods.get(i);
-			
+			nbMethodsSum += nbMethods.get(i);
 		}
-		System.out.println("nbClasses : " + javaFiles.size() + ", nbLines : " + nbLines + ", nbMethods : " + sum + ", nbPackages : " + packagesClean.size());
+		float avgNbMethods = (float) nbMethodsSum / (float) javaFiles.size();
+		float avgNbLinesPerMethod = (float) allLinesInMethods / nbMethodsSum;
+		System.out.println("nbClasses : " + javaFiles.size() + ", nbLines : " + nbLines
+				+ ", nbMethods : " + nbMethodsSum + ", nbPackages : " + packagesClean.size()
+				+ ", avgNbMethods : " + avgNbMethods + ", avgNbLinesPerMethod : " + avgNbLinesPerMethod);
 //		System.out.println(packagesClean);
 	}
 
@@ -124,16 +140,6 @@ public class Parser {
 		return (CompilationUnit) parser.createAST(null); // create and parse
 	}
 
-	// navigate method information
-	public static void printMethodInfo(CompilationUnit parse) {
-		MethodDeclarationVisitor visitor = new MethodDeclarationVisitor();
-		parse.accept(visitor);
-		System.out.println("Number of methods : " + visitor.getMethods().size());
-		for (MethodDeclaration method : visitor.getMethods()) {
-			System.out.println("Method name: " + method.getName()
-					+ " Return type: " + method.getReturnType2());
-		}
-	}
 	
 	public static List<PackageDeclaration> getFilePackages(CompilationUnit parse) {
 		PackageDeclarationVisitor visitor = new PackageDeclarationVisitor();
@@ -141,20 +147,41 @@ public class Parser {
 		return visitor.getPackages();
 	}
 	
-	public static void printPackageInfo(CompilationUnit parse) {
-		PackageDeclarationVisitor visitor = new PackageDeclarationVisitor();
-		parse.accept(visitor);
-		System.out.println("Packages : " + visitor.getPackages());
-	}
-	
-	
-	// get method number
+		// get method number
 		public static int getNbMethodsInFile(CompilationUnit parse) {
 			MethodDeclarationVisitor visitor = new MethodDeclarationVisitor();
 			parse.accept(visitor);
 			return visitor.getMethods().size();
 		}
+		
+		public static int getNbOfLinesForAllMethods(CompilationUnit parse) {
+			MethodDeclarationVisitor visitor = new MethodDeclarationVisitor();
+			parse.accept(visitor);
+			int sum = 0;
+			for (MethodDeclaration method : visitor.getMethods()) {
+				Block body = method.getBody();
+				if (!(body == null)) {
+					List<String> linesInMethod = new ArrayList<String>(Arrays.asList(body.toString().split("\n")));
+					linesInMethod.remove("{");
+					linesInMethod.remove("}");
+					sum += linesInMethod.size();	
+				}
+			}
+			return sum;
+		}
 
+		// navigate method information
+		public static void printMethodInfo(CompilationUnit parse) {
+			MethodDeclarationVisitor visitor = new MethodDeclarationVisitor();
+			parse.accept(visitor);
+			System.out.println("Number of methods : " + visitor.getMethods().size());
+			for (MethodDeclaration method : visitor.getMethods()) {
+				System.out.println("Method name: " + method.getName()
+				+ " Return type: " + method.getReturnType2());
+				}
+			}
+
+		
 	// navigate variables inside method
 	public static void printVariableInfo(CompilationUnit parse) {
 
@@ -197,4 +224,9 @@ public class Parser {
 			}
 		}
 
+		public static void printPackageInfo(CompilationUnit parse) {
+			PackageDeclarationVisitor visitor = new PackageDeclarationVisitor();
+			parse.accept(visitor);
+			System.out.println("Packages : " + visitor.getPackages());
+		}
 }
