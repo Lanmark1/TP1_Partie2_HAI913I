@@ -22,6 +22,7 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
 import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 
 import visitors.FieldAccessVisitor;
@@ -132,6 +133,22 @@ public final class StatisticsHelper {
 				+ "\n11. Classes that have more than X methods : " + classesWithMoreThanXMethods
 				+ "\n12. 10% of the methods that have the most lines of code : " + methodsThatHaveTheMostLines
 				+ "\n13. Max number of parameters in a method : " + mapMethodWithMostParameters.get("number") + " (" + mapMethodWithMostParameters.get("name") + ")");
+	}
+	
+	public static void showCallGraph() throws IOException {
+		// read java files
+		projectPath =  System.getProperty("user.dir") + "/projectsToParse/org.anonbnr.design_patterns-main";
+		
+		projectSourcePath = projectPath + "/src";
+		final File folder = new File(projectSourcePath);
+		ArrayList<File> javaFiles = listJavaFilesForFolder(folder);
+		for (File fileEntry : javaFiles) {
+			String content = FileUtils.readFileToString(fileEntry);
+			 System.out.println(fileEntry);
+			CompilationUnit parse = parse(content.toCharArray());
+			showMethodInvocations(parse);
+			
+		}
 	}
 	
 		// read all java files from specific folder
@@ -356,6 +373,21 @@ public final class StatisticsHelper {
 					map.put("name", method.getName());
 					map.put("number", method.parameters().size());
 				}
+			}
+			return map;
+		}
+		
+		public static Map<String,Integer> showMethodInvocations(CompilationUnit parse) {
+			MethodInvocationVisitor visitor = new MethodInvocationVisitor();
+			parse.accept(visitor);
+			Map<String,Integer> map = new HashMap<>();
+			System.out.println("Methods : ");
+			for (MethodInvocation method : visitor.getMethods()) {
+				System.out.println(method.getName());
+			}
+			System.out.println("Super Methods : ");
+			for (SuperMethodInvocation method : visitor.getSuperMethod()) {
+				System.out.println(method.getName());
 			}
 			return map;
 		}
