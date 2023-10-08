@@ -9,7 +9,7 @@ import util.StatisticsHelper;
 public class Parser {
 
 	public static void main(String[] args) throws IOException {
-		System.out.println("    HAI913I - TP2");
+		System.out.println("    HAI913I - TP1");
 		System.out.println("Please enter a project folder name to be analyzed "
 				+ "(must be present in the projectsToParse folder) \nOR just press enter to analyze this project");
 		// Partie 1

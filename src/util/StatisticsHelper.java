@@ -41,7 +41,8 @@ public final class StatisticsHelper {
 	
 	public static void showStatistics(String projectName) throws IOException {
 		if (projectName.equals("")) { // default project to parse if no input is provided
-			projectPath = System.getProperty("user.dir");			
+			projectPath = System.getProperty("user.dir");
+			projectName = "default";
 		}
 		else {
 			projectPath =  System.getProperty("user.dir") + "/projectsToParse/" + projectName;			
